@@ -1,0 +1,5 @@
+forta_agent>=0.0.10
+sqlalchemy
+aiosqlite
+eth_abi
+eth_utils
