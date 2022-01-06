@@ -3,18 +3,23 @@ import eth_abi
 from eth_utils import encode_hex, function_abi_to_4byte_selector
 from forta_agent import create_transaction_event
 from src.agent import provide_handle_transaction, approve, increase_allowance, hard_reset_db
-from src.blacklist import blacklist
+from src.centralized_exchanges import exchanges
 from src.test.web3_mock import Web3Mock
 
 VICTIM = "0x0000000000000000000000000000000000000000"
 SPENDER_1 = "0x1111111111111111111111111111111111111111"
 SPENDER_2 = "0x2222222222222222222222222222222222222222"
 SPENDERS = [SPENDER_1, SPENDER_2]
-
 CONTRACT_1 = "0x3333333333333333333333333333333333333333"
 CONTRACT_2 = "0x4444444444444444444444444444444444444444"
-
 w3 = Web3Mock()
+
+
+def generate_random_address():
+    address = "0x"
+    for _ in range(40):
+        address += str(random.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f']))
+    return address
 
 
 class TestEvidenceOfPhishingAgent:
@@ -29,8 +34,8 @@ class TestEvidenceOfPhishingAgent:
 
             tx_event = create_transaction_event({
                 'transaction': {
-                    'from': VICTIM,
-                    'to': CONTRACT_1,
+                    'from': generate_random_address(),
+                    'to': generate_random_address(),
                     'data': data,
                     'hash': "0",
                 },
@@ -43,7 +48,7 @@ class TestEvidenceOfPhishingAgent:
                 },
 
             })
-            tmp_findings = provide_handle_transaction(w3)(tx_event)
+            tmp_findings = provide_handle_transaction(w3, test=True)(tx_event)
             if tmp_findings:
                 findings.append(*tmp_findings)
         assert findings
@@ -59,8 +64,8 @@ class TestEvidenceOfPhishingAgent:
 
             tx_event = create_transaction_event({
                 'transaction': {
-                    'from': VICTIM,
-                    'to': CONTRACT_1,
+                    'from': generate_random_address(),
+                    'to': generate_random_address(),
                     'data': data,
                     'hash': "0",
                 },
@@ -73,7 +78,7 @@ class TestEvidenceOfPhishingAgent:
                 },
 
             })
-            tmp_findings = provide_handle_transaction(w3)(tx_event)
+            tmp_findings = provide_handle_transaction(w3, test=True)(tx_event)
             if tmp_findings:
                 findings.append(*tmp_findings)
         assert findings
@@ -89,8 +94,8 @@ class TestEvidenceOfPhishingAgent:
 
             tx_event = create_transaction_event({
                 'transaction': {
-                    'from': VICTIM,
-                    'to': CONTRACT_1,
+                    'from': generate_random_address(),
+                    'to': generate_random_address(),
                     'data': data,
                     'hash': "0",
                 },
@@ -103,7 +108,7 @@ class TestEvidenceOfPhishingAgent:
                 },
 
             })
-            tmp_findings = provide_handle_transaction(w3)(tx_event)
+            tmp_findings = provide_handle_transaction(w3, test=True)(tx_event)
             if tmp_findings:
                 findings.append(*tmp_findings)
         assert not findings
@@ -119,8 +124,8 @@ class TestEvidenceOfPhishingAgent:
 
             tx_event = create_transaction_event({
                 'transaction': {
-                    'from': VICTIM,
-                    'to': CONTRACT_1,
+                    'from': generate_random_address(),
+                    'to': generate_random_address(),
                     'data': data,
                     'hash': "0",
                 },
@@ -133,7 +138,7 @@ class TestEvidenceOfPhishingAgent:
                 },
 
             })
-            tmp_findings = provide_handle_transaction(w3)(tx_event)
+            tmp_findings = provide_handle_transaction(w3, test=True)(tx_event)
             if tmp_findings:
                 findings.append(*tmp_findings)
         assert not findings
@@ -144,7 +149,7 @@ class TestEvidenceOfPhishingAgent:
         for i in range(18):
             approve_func = function_abi_to_4byte_selector(approve)
             params = eth_abi.encode_abi(["address", "uint256"],
-                                        [random.choice(blacklist), 100])
+                                        [random.choice(exchanges), 100])
             data = encode_hex(approve_func + params)
 
             tx_event = create_transaction_event({
@@ -163,7 +168,7 @@ class TestEvidenceOfPhishingAgent:
                 },
 
             })
-            tmp_findings = provide_handle_transaction(w3)(tx_event)
+            tmp_findings = provide_handle_transaction(w3, test=True)(tx_event)
             if tmp_findings:
                 findings.append(*tmp_findings)
         assert not findings
@@ -193,7 +198,7 @@ class TestEvidenceOfPhishingAgent:
                 },
 
             })
-            tmp_findings = provide_handle_transaction(w3)(tx_event)
+            tmp_findings = provide_handle_transaction(w3, test=True)(tx_event)
             if tmp_findings:
                 findings.append(*tmp_findings)
         assert findings

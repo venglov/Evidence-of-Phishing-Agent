@@ -1,3 +1,6 @@
+from web3 import Web3
+
+
 def extract_argument(event: dict, argument: str) -> any:
     """
     the function extract specified argument from the event
@@ -15,4 +18,4 @@ def is_EOA(address: str, w3) -> bool:
     :param w3:
     :return: bool
     """
-    return w3.eth.getCode(address) == '0x'
+    return False if w3.eth.getCode(Web3.toChecksumAddress(address.lower())) else True

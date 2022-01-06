@@ -9,7 +9,7 @@ from src.utils import is_EOA
 from src.config import MONITOR_PERIOD_IN_BLOCKS, TRANSFERS_AMOUNT_TH
 from src.findings import EvidenceOfPhishingFindings
 from collections import Counter
-from src.blacklist import blacklist
+from src.centralized_exchanges import exchanges
 
 inited = False  # Initialization Pattern
 web3 = Web3(Web3.HTTPProvider(get_json_rpc_url()))
@@ -24,7 +24,7 @@ increase_allowance = next((x for x in abi if x.get('name', "") == "increaseAllow
 
 async def analyze_db():
     """
-    This function analyses the db and looks for the senders, that have a big amount of transfers to theirs adresses
+    This function analyses the db and looks for the senders, that have a big amount of transfers to theirs addresses
     :return: findings: list
     """
     findings = []
@@ -43,7 +43,7 @@ async def analyze_db():
             # get the dict of the affected contracts with total amounts of transfers to sender inside
             affected_contracts_with_amounts = {}
             for contract, amount in zip([tws.token_address for tws in transfers_with_spender],
-                                        [tws.amount for tws in transfers_with_spender]):
+                                        [int(tws.amount) for tws in transfers_with_spender]):
                 affected_contracts_with_amounts.update(
                     {contract: affected_contracts_with_amounts.get(contract, 0) + amount})
             findings.append(
@@ -75,21 +75,21 @@ async def detect_evidence_of_phishing(transaction_event: forta_agent.transaction
         victim = transaction_event.from_  # get the potential victim
 
         # skip if victim isn't EOA || amount is null or 0 || spender isn't EOA || spender is centralized exchange
-        if not is_EOA(spender, w3) or not amount or amount == 0 or not is_EOA(victim, w3) or spender in blacklist:
+        if not is_EOA(spender, w3) or not amount or amount == 0 or not is_EOA(victim, w3) or spender in exchanges:
             continue
 
         # add the transfer to the db
         await transfers.paste_row(
-            {'spender': spender, 'victim': victim, 'amount': amount, 'block': transaction_event.block_number,
+            {'spender': spender, 'victim': victim, 'amount': str(amount), 'block': transaction_event.block_number,
              'token_address': token_address})
         await transfers.commit()
 
-    return await analyze_db()
+    return []
 
 
 async def clear_db(transaction_event: forta_agent.transaction_event.TransactionEvent):
     """
-    This function deletes old transfers and votes from the db
+    This function deletes old transfers from the db
     :param transaction_event: forta_agent.transaction_event.TransactionEvent
     :return: []
     """
@@ -99,25 +99,26 @@ async def clear_db(transaction_event: forta_agent.transaction_event.TransactionE
     return []
 
 
-async def main(transaction_event: forta_agent.transaction_event.TransactionEvent, w3):
+async def main(transaction_event: forta_agent.transaction_event.TransactionEvent, w3, test):
     """
     This function is used to start detect-functions in the different threads and then gather the findings
     """
     global inited
     if not inited:
-        transfers = await init_async_db()
+        transfers = await init_async_db(test)
         config.set_tables(transfers)
         inited = True
 
     return await asyncio.gather(
         detect_evidence_of_phishing(transaction_event, w3),
-        clear_db(transaction_event)
+        clear_db(transaction_event),
+        analyze_db()
     )
 
 
-def provide_handle_transaction(w3):
+def provide_handle_transaction(w3, test=False):
     def handle_transaction(transaction_event: forta_agent.transaction_event.TransactionEvent) -> list:
-        return [finding for findings in asyncio.run(main(transaction_event, w3)) for finding in findings]
+        return [finding for findings in asyncio.run(main(transaction_event, w3, test)) for finding in findings]
 
     return handle_transaction
 

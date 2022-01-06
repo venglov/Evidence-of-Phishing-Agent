@@ -11,6 +11,6 @@ async def wrapped_models(Base: declarative_base):
         token_address = Column(String)
         victim = Column(String)
         spender = Column(String)
-        amount = Column(Integer)
+        amount = Column(String)
 
     return [Transfers]

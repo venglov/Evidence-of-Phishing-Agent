@@ -8,4 +8,4 @@ class EthMock:
         self.contract = None
 
     def getCode(self, _):
-        return "0x"
+        return b''
