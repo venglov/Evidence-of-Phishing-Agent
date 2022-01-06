@@ -14,7 +14,7 @@ The agent is separated into three threads:
 3. Third thread deletes old transfers from the db
 
 ## Agent Flow
-![Phishing-Agent-Flow.png]()
+![Phishing-Agent-Flow.png](https://github.com/VVlovsky/Evidence-of-Phishing-Agent/blob/master/Phishing-Agent-Flow.png)
 
 ## Setup
 
